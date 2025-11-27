@@ -1,0 +1,9 @@
+node_modules/
+dist/
+reports/output/
+reports/.artifacts/
+.DS_Store
+*.log
+*.tmp
+coverage/
+playwright-report/
