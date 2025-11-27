@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { CustomActions } from '../actions/customActions';
 import { LoginPage } from '../pages/login.page';
-import { validarMensaje, ingresarUsuario, ingresarPassword, hacerClickLogin } from '../steps/login.steps';
+import { loginSelectors } from '../selectors/login.selectors';
 
 test.describe('Login', () => {
   test('Login exitoso', async ({ page }, testInfo) => {
@@ -10,10 +10,7 @@ test.describe('Login', () => {
     await test.step('Abrir página de login', async () => {
       await loginPage.goto();
     });
-    await ingresarUsuario(page, actions, 'standard_user');
-    await ingresarPassword(page, actions, 'secret_sauce');
-    await hacerClickLogin(page, actions);
-    await validarMensaje(page, testInfo, 'Products');
-    await expect(loginPage.productsTitle()).toHaveText('Products');
+
+    await loginPage.login(testInfo, 'standard_user', 'secret_sauce');
   });
 });
