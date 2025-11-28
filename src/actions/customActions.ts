@@ -35,4 +35,10 @@ export class CustomActions {
     const after = await locator.screenshot();
     await this.testInfo.attach(`${stepName || 'hover'}-after`, { contentType: 'image/png', body: after });
   }
+
+  async customPressEnter(locator: Locator) {
+    await locator.press('Enter');
+  }
+
+  
 }

@@ -1,6 +1,7 @@
 import { Page, TestInfo, expect, test } from '@playwright/test';
 import { CustomActions } from '../actions/customActions';
 import { loginSelectors } from '../selectors/login.selectors';
+import { menuSelectors } from '../selectors/menu.selectors';
 
 export async function ingresarUsuario(page: Page, actions: CustomActions, usuario: string) {
   await test.step('Ingresar usuario', async () => {
@@ -22,7 +23,7 @@ export async function hacerClickLogin(page: Page, actions: CustomActions) {
 
 export async function validarMensaje(page: Page, testInfo: TestInfo, esperado: string) {
   await test.step('Validar mensaje', async () => {
-    await expect(loginSelectors.productsTitle(page)).toHaveText(esperado);
+    await expect(menuSelectors.seccionSolicitudes(page)).toBeVisible();
     await testInfo.attach('validacion', { contentType: 'image/png', body: await page.screenshot() });
   });
 }

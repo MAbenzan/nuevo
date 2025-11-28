@@ -7,3 +7,4 @@ reports/.artifacts/
 *.tmp
 coverage/
 playwright-report/
+.env

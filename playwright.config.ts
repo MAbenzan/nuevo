@@ -1,4 +1,12 @@
+import 'dotenv/config';
 import { defineConfig, devices } from '@playwright/test';
+import fs from 'fs';
+import path from 'path';
+
+const customReporterPath = path.resolve('dist', 'reports', 'reporter.js');
+const reporterConfig = fs.existsSync(customReporterPath)
+  ? [[customReporterPath], ['html']]
+  : [['list'], ['html']];
 
 export default defineConfig({
   testDir: './src/tests',
@@ -8,11 +16,15 @@ export default defineConfig({
   reporter: [['./dist/reports/reporter.js']],
   outputDir: './reports/.artifacts',
   use: {
-    baseURL: 'https://www.saucedemo.com/',
+    baseURL: 'https://dphcrmtest:4443/Account/Login',
     headless: true,
+    ignoreHTTPSErrors: true,
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
-    trace: 'on-first-retry'
+    trace: 'on-first-retry',
+    launchOptions: {
+      args: ['--ignore-certificate-errors']
+    }
   },
   projects: [
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
