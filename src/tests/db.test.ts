@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { query } from '../data/sqlClient';
 import sql from 'mssql';
-import { QUERY_CLIENTE_AUTORIZACION } from '../data/queries';
+import { QUERY_CLIENTE_AUTORIZACION, obtenerClienteYContenedorUnificado } from '../data/queries';
 
 const hasEnv = !!process.env.SQL_SERVER && !!process.env.SQL_DATABASE && !!process.env.SQL_USER && !!process.env.SQL_PASSWORD;
 
@@ -40,5 +40,19 @@ test.describe('DB', () => {
     const ok = results.filter(r => r.status === 'fulfilled').length;
     expect(ok).toBeGreaterThanOrEqual(10);
     expect(dur).toBeLessThanOrEqual(5000);
+  });
+
+  test('Consulta unificada cliente+contenedor', async ({}, testInfo) => {
+    const info = await obtenerClienteYContenedorUnificado({
+      usuario: process.env.SQL_USUARIO_APP,
+      rol: process.env.SQL_ROL_APP,
+      garantia: process.env.SQL_GARANTIA_APP,
+      tributacion: Number(process.env.SQL_TRIBUTACION_APP),
+      modulo: process.env.SQL_MODULO_APP,
+    });
+    await testInfo.attach('unificado', { contentType: 'application/json', body: Buffer.from(JSON.stringify(info || {})) });
+    expect(info).toBeTruthy();
+    expect(info?.cliente).toBeTruthy();
+    expect(info?.contenedor).toBeTruthy();
   });
 });

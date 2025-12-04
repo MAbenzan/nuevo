@@ -5,13 +5,22 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true});require('fs').rmSync('reports/output',{recursive:true,force:true})\"",
-    "test": "npm run build && npx playwright test --reporter=./dist/reports/reporter.js",
-    "test:headed": "npm run build && npx playwright test --reporter=./dist/reports/reporter.js --headed",
-    "test:ui": "npx playwright test --ui",
+    "test": "pnpm run build && pnpm exec playwright test",
+    "test:headed": "pnpm run build && pnpm exec playwright test --headed",
+    "test:list": "pnpm run build && pnpm exec playwright test --reporter=list",
+    "test:html": "pnpm run build && pnpm exec playwright test --reporter=html",
+    "test:custom": "pnpm run build && pnpm exec playwright test --reporter=./dist/reports/reporter.js",
+    "test:slow": "pnpm run build && set SLOWMO_MS=300&& set HEADLESS=false&& pnpm exec playwright test",
+    "test:fast": "pnpm run build && set SLOWMO_MS=0&& set HEADLESS=true&& pnpm exec playwright test",
+    "test:debug": "pnpm run build && set PWDEBUG=1&& set HEADLESS=false&& pnpm exec playwright test",
+    "test:chromium": "pnpm run build && pnpm exec playwright test --project=chromium",
+    "test:firefox": "pnpm run build && pnpm exec playwright test --project=firefox",
+    "test:webkit": "pnpm run build && pnpm exec playwright test --project=webkit",
+    "test:ui": "pnpm exec playwright test --ui",
     "lint": "eslint . --ext .ts",
     "format": "prettier --write .",
     "report:open": "start reports\\output\\index.html",
-    "init": "npx playwright install --with-deps"
+    "init": "pnpm exec playwright install --with-deps"
   },
   "devDependencies": {
     "@playwright/test": "^1.47.0",

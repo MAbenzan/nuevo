@@ -40,5 +40,33 @@ export class CustomActions {
     await locator.press('Enter');
   }
 
-  
+  async waitForVisible(locator: Locator, timeout?: number) {
+    await locator.waitFor({ state: 'visible', timeout });
+  }
+
+  async waitForHidden(locator: Locator, timeout?: number) {
+    await locator.waitFor({ state: 'hidden', timeout });
+  }
+
+  async waitForPageLoaded() {
+    await this.page.waitForLoadState('load');
+    await this.page.waitForLoadState('networkidle');
+    await this.page.waitForFunction(() => document.readyState === 'complete');
+  }
+
+  async waitForUrl(pattern: string | RegExp, timeout?: number) {
+    await this.page.waitForURL(pattern as any, { timeout });
+  }
+
+  async waitForResponseUrl(pattern: string | RegExp, timeout?: number) {
+    const predicate = (res: any) => {
+      const url = res.url();
+      return typeof pattern === 'string' ? url.includes(pattern) : (pattern as RegExp).test(url);
+    };
+    await this.page.waitForResponse(predicate, { timeout });
+  }
+
+  async delay(ms: number) {
+    await this.page.waitForTimeout(ms);
+  }
 }

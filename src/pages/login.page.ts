@@ -5,11 +5,8 @@ import { CustomActions } from '../actions/customActions';
 export class LoginPage {
   constructor(private page: Page, private actions: CustomActions) {}
 
-  async goto() {
-    await this.page.goto('/');
-  }
-
   async login(testInfo: TestInfo, user: string, password: string) {
+    await this.page.goto('/');
     await this.actions.customType(loginSelectors.usernameInput(this.page), user, 'ingresar-usuario');
     await this.actions.customType(loginSelectors.passwordInput(this.page), password, 'ingresar-password');
     await this.actions.customClick(loginSelectors.loginButton(this.page), 'click-login');
