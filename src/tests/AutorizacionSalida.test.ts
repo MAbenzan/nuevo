@@ -1,9 +1,9 @@
-import { test, expect } from '@playwright/test';
+import { test } from '@playwright/test';
 import { CustomActions } from '../actions/customActions';
 import { LoginPage } from '../pages/login.page';
 import { credentials } from '../config/credentials';
 import { AutorizacionSalidaPage } from '../pages/autorizacionSalida.page';
-import { Roles, Garantias, Tributacion, Modulos } from '../data/queries';
+import { Roles, Garantias, Tributacion, Modulos, EstadoOperativo } from '../data/queries';
 
 test.describe('Autorizacion Salida', () => {
   test.describe.configure({ timeout: 60000 });
@@ -16,11 +16,12 @@ test.describe('Autorizacion Salida', () => {
     });
     
      await autorizacionSalidaPage.autorizacionSalida(undefined, {
-       usuario: credentials.userDPHVirtual, 
+       usuario: credentials.userDPHVirtual,
        rol: Roles.CLIENTE,
-       garantia: Garantias.NO,
+       garantia: Garantias.SI,
        tributacion: Tributacion.NO_EXENTO,
-       modulo: Modulos.IMPORTACION
-      });
+       modulo: Modulos.IMPORTACION,
+       estadoOperativo: EstadoOperativo.MANIFESTADO
+     }, { fecha: '10/12/2025' });
   });
 });

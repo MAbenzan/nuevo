@@ -1,8 +1,7 @@
-import { Page, TestInfo } from '@playwright/test';
-import { loginSelectors } from '../selectors/login.selectors';
+import { Page } from '@playwright/test';
 import { CustomActions } from '../actions/customActions';
 import { menuSelectors } from '../selectors/menu.selectors';
-import { obtenerClienteAutorizacion, obtenerContenedorPendiente, obtenerContenedorYCliente, obtenerClienteYContenedorUnificado } from '../data/queries';
+import { obtenerClienteYContenedorUnificado } from '../data/queries';
 import { commonSelectors } from '../selectors/common.selectors';
 import { autorizacionSalidaSelectors } from '../selectors/autorizacionSalida.selectors';
 
@@ -11,7 +10,8 @@ export class AutorizacionSalidaPage {
 
   async autorizacionSalida(
     cliente?: string,
-    dbParams?: { usuario?: string; rol?: string; garantia?: string | number | boolean; tributacion?: number; modulo?: string }
+    dbParams?: { usuario?: string; rol?: string; garantia?: string | number | boolean; tributacion?: number; modulo?: string; estadoOperativo?: string },
+    options?: { fecha?: string; nota?: string },
   ) {
     if (!cliente) {
       const datos = await obtenerClienteYContenedorUnificado({
@@ -20,6 +20,7 @@ export class AutorizacionSalidaPage {
         garantia: dbParams?.garantia,
         tributacion: dbParams?.tributacion,
         modulo: dbParams?.modulo ?? process.env.SQL_MODULO_APP,
+        estadoOperativo: dbParams?.estadoOperativo,
       });
       if (!datos || !datos.cliente) throw new Error('No se encontró contenedor/cliente en DB');
       cliente = datos.cliente;
@@ -36,8 +37,12 @@ export class AutorizacionSalidaPage {
       await this.actions.waitForPageLoaded();
 
     await this.actions.customClick(commonSelectors.btnNueva(this.page), 'click-btn-nueva');
-    await this.actions.customType(autorizacionSalidaSelectors.txtFechaVigencia(this.page), '04/12/2025', 'ingresar-fecha');
-    await this.actions.customType(autorizacionSalidaSelectors.txtNota(this.page), 'Nota de prueba', 'Prueba automatizada');
+
+    const fechaVigencia = options?.fecha ?? this.getDateToday();
+    await this.actions.customType(autorizacionSalidaSelectors.txtFechaVigencia(this.page), fechaVigencia, 'ingresar-fecha');
+
+    const nota = options?.nota ?? 'Nota de prueba';
+    await this.actions.customType(autorizacionSalidaSelectors.txtNota(this.page), nota, 'Prueba automatizada');
     await this.actions.customClick(commonSelectors.btnProximo(this.page), 'click-btn-proximo');
     
       if (datos.contenedor) {
@@ -54,5 +59,12 @@ export class AutorizacionSalidaPage {
 
 
 
+  }
+  private getDateToday(): string {
+    const d = new Date();
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${day}/${month}/${year}`;
   }
 }

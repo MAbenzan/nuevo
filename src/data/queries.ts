@@ -21,6 +21,14 @@ export enum Modulos {
   EXPORTACION = 'Exportacion'
 }
 
+export enum EstadoOperativo {
+  MANIFESTADO = 'Manifestado',
+  RETORNADO = 'Retornado',
+  EN_PUERTO = 'En puerto',
+  EN_CALLE = 'En calle',
+  RETORNADO_EN_PUERTO = 'Retornado En puerto'
+}
+
 export const QUERY_CLIENTE_AUTORIZACION = `
 SELECT TOP 1 
   ud.tkl_name,
@@ -106,25 +114,30 @@ export async function obtenerContenedorYCliente(params?: { cliente?: string; mod
 }
 
 export const QUERY_UNIFICADO_CLIENTE_CONTENEDOR = `
-SELECT TOP 1 
+SELECT TOP 1
   ud.tkl_name AS usuarioCliente,
   c.tkl_name AS cliente,
-  CASE c.tkl_tributacion 
+  CASE c.tkl_tributacion
     WHEN 969790000 THEN 'Exento'
     WHEN 969790001 THEN 'No Exento'
   END AS tributacion,
   dc.contenedor
-FROM tkl_usuariosclientesdetalle ud 
-INNER JOIN tkl_clientes c ON c.tkl_clientesId = ud.tkl_clientes 
+FROM tkl_usuariosclientesdetalle ud
+INNER JOIN tkl_clientes c ON c.tkl_clientesId = ud.tkl_clientes
 CROSS APPLY (
-  SELECT TOP 1 dm.tkl_ContenedorName AS contenedor 
-  FROM tkl_demoracontenedor dm 
-  INNER JOIN tkl_solicituddetalledemora sd ON dm.tkl_demoracontenedorId = sd.tkl_demoracontenedor 
+  SELECT TOP 1 dm.tkl_ContenedorName AS contenedor
+  FROM tkl_demoracontenedor dm
   WHERE dm.tkl_ClienteName = c.tkl_name
     AND dm.tkl_moduloname = @modulo
     AND dm.tkl_BalanceTotaldeDemora > 1
+    AND dm.tkl_estadooperativoName = @estadoOperativo
     AND dm.tkl_estadooperativo IS NOT NULL
     AND dm.tkl_ContenedorName IS NOT NULL
+    AND NOT EXISTS (
+        SELECT 1
+        FROM tkl_solicituddetalledemora sd_check
+        WHERE sd_check.tkl_demoracontenedor = dm.tkl_demoracontenedorId
+    )
   ORDER BY dm.tkl_ContenedorName DESC
 ) dc
 WHERE ud.tkl_usuariodphvirtualName = @usuario 
@@ -138,6 +151,7 @@ export async function obtenerClienteYContenedorUnificado(params?: {
   garantia?: string | number | boolean;
   tributacion?: number;
   modulo?: string;
+  estadoOperativo?: string;
   cliente?: string;
 }) {
   const usuario = params?.usuario ?? process.env.SQL_USUARIO_APP ?? 'usuario-demo';
@@ -150,6 +164,7 @@ export async function obtenerClienteYContenedorUnificado(params?: {
   const tributacion = tributacionRaw === undefined ? null : String(tributacionRaw).trim() === '' ? null : String(tributacionRaw);
   const modulo = params?.modulo ?? process.env.SQL_MODULO_APP ?? 'Autorizacion de Salida';
   const cliente = params?.cliente ?? null;
+  const estadoOperativo = params?.estadoOperativo ?? process.env.SQL_ESTADO_OPERATIVO_APP ?? EstadoOperativo.MANIFESTADO;
 
   const result = await query(QUERY_UNIFICADO_CLIENTE_CONTENEDOR, {
     usuario: { type: sql.VarChar, value: usuario },
@@ -157,11 +172,12 @@ export async function obtenerClienteYContenedorUnificado(params?: {
     garantia: garantiaValue === null ? { type: sql.Bit, value: null } : (garantiaIsBit ? { type: sql.Bit, value: Number(garantiaValue) } : { type: sql.VarChar, value: String(garantiaValue) }),
     tributacion: tributacion === null ? { type: sql.NVarChar, value: null } : { type: sql.VarChar, value: String(tributacion) },
     modulo: { type: sql.VarChar, value: modulo },
+    estadoOperativo: { type: sql.VarChar, value: estadoOperativo },
     cliente: cliente === null ? { type: sql.NVarChar, value: null } : { type: sql.VarChar, value: cliente },
   }, 30000);
 
   const row = result.recordset?.[0];
-  log(`unificado_params usuario=${usuario} rol=${rol} garantia=${garantiaEnv} tributacion=${tributacion ?? ''} modulo=${modulo} cliente=${cliente ?? ''}`);
+  log(`unificado_params usuario=${usuario} rol=${rol} garantia=${garantiaEnv} tributacion=${tributacion ?? ''} modulo=${modulo} estadoOperativo=${estadoOperativo} cliente=${cliente ?? ''}`);
   if (!row) {
     log('unificado_result empty');
     return null;
