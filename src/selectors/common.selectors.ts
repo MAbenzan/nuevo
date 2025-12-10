@@ -11,5 +11,10 @@ export const commonSelectors = {
      btnNo: (page: Page) => page.getByRole('button', { name: 'No' }),
      btnImprimir: (page: Page) => page.getByRole('button', { name: 'Imprimir' }),
      btnCerrar: (page: Page) => page.getByRole('button', { name: 'Cerrar' }),
+     btnAceptar: (page: Page) => page.getByRole('button', { name: 'Aceptar' }),
 
+     // Selectores SweetAlert genéricos
+     modalSweetAlert: (page: Page) => page.locator('div.sweet-alert.showSweetAlert.visible'),
+     modalTitle: (page: Page) => page.locator('div.sweet-alert.showSweetAlert.visible h2'),
+     modalText: (page: Page) => page.locator('div.sweet-alert.showSweetAlert.visible p.lead.text-muted'),
 }

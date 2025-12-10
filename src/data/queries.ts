@@ -3,7 +3,9 @@ import { query } from './sqlClient';
 import { log } from '../utils/logger';
 
 export enum Roles {
-  CLIENTE = 'CLIENTE'
+  CLIENTE = 'CLIENTE',
+  CONSOLIDADORA = 'Consolidadora',
+  AGENCIA = 'Agencia',
 }
 
 export enum Garantias {
@@ -27,6 +29,17 @@ export enum EstadoOperativo {
   EN_PUERTO = 'En puerto',
   EN_CALLE = 'En calle',
   RETORNADO_EN_PUERTO = 'Retornado En puerto'
+}
+
+export enum Restricciones {
+  AUTORIZACION_SALIDA = 'Emision Autorizacion de Salida o Descarga',
+  RECIBO = 'Emision Recibo de Dinero',
+  CAMBIO_CONSIGNATARIO = 'Cambio Consignatario'
+}
+
+export enum Accion_restriccion {
+  LIBERADO = 969790001,
+  COLOCADO = 969790000
 }
 
 export const QUERY_CLIENTE_AUTORIZACION = `
@@ -117,6 +130,11 @@ export const QUERY_UNIFICADO_CLIENTE_CONTENEDOR = `
 SELECT TOP 1
   ud.tkl_name AS usuarioCliente,
   c.tkl_name AS cliente,
+  CASE rc.tkl_Accion 
+    WHEN 969790000 THEN 'Colocado' 
+    WHEN 969790001 THEN 'Liberado' 
+  END AS accion,
+  rc.tkl_tipoderestriccionname AS tipoRestriccion,
   CASE c.tkl_tributacion
     WHEN 969790000 THEN 'Exento'
     WHEN 969790001 THEN 'No Exento'
@@ -124,6 +142,7 @@ SELECT TOP 1
   dc.contenedor
 FROM tkl_usuariosclientesdetalle ud
 INNER JOIN tkl_clientes c ON c.tkl_clientesId = ud.tkl_clientes
+INNER JOIN tkl_restriccionescliente rc ON rc.tkl_Cliente = c.tkl_clientesId 
 CROSS APPLY (
   SELECT TOP 1 dm.tkl_ContenedorName AS contenedor
   FROM tkl_demoracontenedor dm
@@ -143,7 +162,10 @@ CROSS APPLY (
 WHERE ud.tkl_usuariodphvirtualName = @usuario 
   AND ud.tkl_roldphvirtualName = @rol 
   AND c.tkl_garantia = @garantia
-  AND  c.tkl_tributacion = @tributacion`;
+  AND  c.tkl_tributacion = @tributacion
+  AND rc.tkl_tipoderestriccionname = @tipoRestriccion
+  AND rc.tkl_Accion = @accion
+  AND rc.statuscode = 0`;
 
 export async function obtenerClienteYContenedorUnificado(params?: {
   usuario?: string;
@@ -153,6 +175,8 @@ export async function obtenerClienteYContenedorUnificado(params?: {
   modulo?: string;
   estadoOperativo?: string;
   cliente?: string;
+  tipoRestriccion?: string;
+  accion?: number;
 }) {
   const usuario = params?.usuario ?? process.env.SQL_USUARIO_APP ?? 'usuario-demo';
   const rol = params?.rol ?? process.env.SQL_ROL_APP ?? 'ROL-DEMO';
@@ -165,6 +189,8 @@ export async function obtenerClienteYContenedorUnificado(params?: {
   const modulo = params?.modulo ?? process.env.SQL_MODULO_APP ?? 'Autorizacion de Salida';
   const cliente = params?.cliente ?? null;
   const estadoOperativo = params?.estadoOperativo ?? process.env.SQL_ESTADO_OPERATIVO_APP ?? EstadoOperativo.MANIFESTADO;
+  const tipoRestriccion = params?.tipoRestriccion ?? Restricciones.AUTORIZACION_SALIDA;
+  const accion = params?.accion ?? Accion_restriccion.LIBERADO;
 
   const result = await query(QUERY_UNIFICADO_CLIENTE_CONTENEDOR, {
     usuario: { type: sql.VarChar, value: usuario },
@@ -174,10 +200,12 @@ export async function obtenerClienteYContenedorUnificado(params?: {
     modulo: { type: sql.VarChar, value: modulo },
     estadoOperativo: { type: sql.VarChar, value: estadoOperativo },
     cliente: cliente === null ? { type: sql.NVarChar, value: null } : { type: sql.VarChar, value: cliente },
+    tipoRestriccion: { type: sql.VarChar, value: tipoRestriccion },
+    accion: { type: sql.Int, value: Number(accion) },
   }, 30000);
 
   const row = result.recordset?.[0];
-  log(`unificado_params usuario=${usuario} rol=${rol} garantia=${garantiaEnv} tributacion=${tributacion ?? ''} modulo=${modulo} estadoOperativo=${estadoOperativo} cliente=${cliente ?? ''}`);
+  log(`unificado_params usuario=${usuario} rol=${rol} garantia=${garantiaEnv} tributacion=${tributacion ?? ''} modulo=${modulo} estadoOperativo=${estadoOperativo} cliente=${cliente ?? ''} tipoRestriccion=${tipoRestriccion} accion=${accion}`);
   if (!row) {
     log('unificado_result empty');
     return null;
@@ -187,6 +215,8 @@ export async function obtenerClienteYContenedorUnificado(params?: {
   return {
     usuarioCliente: row.usuarioCliente as string,
     cliente: row.cliente as string,
+    accion: row.accion as string,
+    tipoRestriccion: row.tipoRestriccion as string,
     tributacion: row.tributacion as string,
     contenedor: row.contenedor as string,
   };

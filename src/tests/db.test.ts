@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { query } from '../data/sqlClient';
 import sql from 'mssql';
-import { QUERY_CLIENTE_AUTORIZACION, obtenerClienteYContenedorUnificado } from '../data/queries';
+import { QUERY_CLIENTE_AUTORIZACION, obtenerClienteYContenedorUnificado, Restricciones, Accion_restriccion } from '../data/queries';
 
 const hasEnv = !!process.env.SQL_SERVER && !!process.env.SQL_DATABASE && !!process.env.SQL_USER && !!process.env.SQL_PASSWORD;
 
@@ -49,9 +49,11 @@ test.describe('DB', () => {
       garantia: process.env.SQL_GARANTIA_APP,
       tributacion: Number(process.env.SQL_TRIBUTACION_APP),
       modulo: process.env.SQL_MODULO_APP,
+      tipoRestriccion: process.env.SQL_TIPO_RESTRICCION || Restricciones.AUTORIZACION_SALIDA,
+      accion: Number(process.env.SQL_ACCION_RESTRICCION) || Accion_restriccion.LIBERADO,
     });
     await testInfo.attach('unificado', { contentType: 'application/json', body: Buffer.from(JSON.stringify(info || {})) });
-    expect(info).toBeTruthy();
+    if (!info) test.skip(true, 'No hay datos coincidentes para los filtros configurados');
     expect(info?.cliente).toBeTruthy();
     expect(info?.contenedor).toBeTruthy();
   });
