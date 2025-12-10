@@ -41,7 +41,10 @@ export class AutorizacionSalidaPage {
       await this.actions.click(commonSelectors.btnNueva(this.page), 'click-btn-nueva');
 
       // Detectar modal de restricciones usando selectores por defecto (SweetAlert)
-      await this.actions.handleModal({ title: 'Acción no permitida!!', messageIncludes: 'restricciones' }, undefined, true, 5000, false);
+      const modalResult = await this.actions.handleModal({ title: 'Acción no permitida!!', messageIncludes: 'restricciones' }, undefined, true, 5000, false);
+      if (modalResult?.detected) {
+        return { blocked: true, title: modalResult.title, message: modalResult.message };
+      }
 
       const fechaVigencia = options?.fecha ?? getDateToday();
       await this.actions.type(autorizacionSalidaSelectors.txtFechaVigencia(this.page), fechaVigencia, 'ingresar-fecha');

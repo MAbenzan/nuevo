@@ -25,6 +25,6 @@ test.describe('Autorizacion Salida', () => {
       restricciones: Restricciones.AUTORIZACION_SALIDA,
       accion_restriccion: Accion_restriccion.LIBERADO
     }, { fecha: '10/12/2025' });
-    expect(result).toBeTruthy();
+    expect(result.blocked).toBe(true);
   });
 });
