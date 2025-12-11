@@ -165,7 +165,8 @@ WHERE ud.tkl_usuariodphvirtualName = @usuario
   AND  c.tkl_tributacion = @tributacion
   AND rc.tkl_tipoderestriccionname = @tipoRestriccion
   AND rc.tkl_Accion = @accion
-  AND rc.statuscode = 0`;
+  AND rc.statuscode=1
+  AND rc.statecode=0`;
 
 export async function obtenerClienteYContenedorUnificado(params?: {
   usuario?: string;
