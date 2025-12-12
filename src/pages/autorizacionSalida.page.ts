@@ -4,15 +4,15 @@ import { menuSelectors } from 'selectors/menu.selectors';
 import { obtenerClienteYContenedorUnificado, Restricciones, Accion_restriccion } from 'data/queries';
 import { commonSelectors } from 'selectors/common.selectors';
 import { autorizacionSalidaSelectors } from 'selectors/autorizacionSalida.selectors';
-import { getDateToday } from 'utils/date';
 
 export class AutorizacionSalidaPage {
   constructor(private page: Page, private actions: CustomActions) { }
+  
 
   async autorizacionSalida(
     cliente?: string,
     dbParams?: { usuario?: string; rol?: string; garantia?: string | number | boolean; tributacion?: number; modulo?: string; estadoOperativo?: string; restricciones?: Restricciones; accion_restriccion?: Accion_restriccion },
-    options?: { fecha?: string; nota?: string },
+    options?: { fecha?: string | null; nota?: string },
   ): Promise<{ blocked: boolean; title?: string; message?: string }> {
     if (!cliente) {
       const datos = await obtenerClienteYContenedorUnificado({
@@ -30,6 +30,7 @@ export class AutorizacionSalidaPage {
 
       console.log('Cliente encontrado:', cliente);
       console.log('Contenedor encontrado:', datos.contenedor);
+      const fecha = options?.fecha;
 
       await this.actions.click(menuSelectors.menuCliente(this.page), 'click-menu-cliente');
       await this.actions.type(menuSelectors.selectorcliente(this.page), cliente, 'ingresar-cliente');
@@ -46,11 +47,12 @@ export class AutorizacionSalidaPage {
         return { blocked: true, title: modalResult.title, message: modalResult.message };
       }
 
-      const fechaVigencia = options?.fecha ?? getDateToday();
-      await this.actions.type(autorizacionSalidaSelectors.txtFechaVigencia(this.page), fechaVigencia, 'ingresar-fecha');
+      
+      if (fecha != null) {
+        await this.actions.type(autorizacionSalidaSelectors.txtFechaVigencia(this.page), fecha, 'ingresar-fecha');
+      }
 
-      const nota = options?.nota ?? 'Nota de prueba';
-      await this.actions.type(autorizacionSalidaSelectors.txtNota(this.page), nota, 'Prueba automatizada');
+      await this.actions.type(autorizacionSalidaSelectors.txtNota(this.page), 'Nota de prueba automatizada', 'Prueba automatizada');
 
       await this.actions.click(commonSelectors.btnProximo(this.page), 'click-btn-proximo');
 
@@ -60,11 +62,17 @@ export class AutorizacionSalidaPage {
       }
     }
 
-    await this.actions.click(autorizacionSalidaSelectors.chkSeleccionarTodos(this.page), 'click-chk-seleccionar-todos');
+    await this.actions.delay(1000);
+    await this.actions.click(autorizacionSalidaSelectors.chkSeleccionarPrimero(this.page), 'click-chk-seleccionar-priemro');
+
     await this.actions.click(commonSelectors.btnProximo(this.page), 'click-btn-proximo');
+
     await this.actions.click(commonSelectors.btnFinalizar(this.page), 'click-btn-finalizar');
+
     await this.actions.click(commonSelectors.btnSi(this.page), 'click-btn-si');
+
     await this.actions.click(commonSelectors.btnCerrar(this.page), 'click-btn-cerrar');
+
     return { blocked: false };
   }
 }
