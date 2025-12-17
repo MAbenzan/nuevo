@@ -14,7 +14,10 @@ export const commonSelectors = {
      btnAceptar: (page: Page) => page.getByRole('button', { name: 'Aceptar' }),
 
      // Selectores SweetAlert genéricos
-     modalSweetAlert: (page: Page) => page.locator('div.sweet-alert.showSweetAlert.visible'),
-     modalTitle: (page: Page) => page.locator('div.sweet-alert.showSweetAlert.visible h2'),
-     modalText: (page: Page) => page.locator('div.sweet-alert.showSweetAlert.visible p.lead.text-muted'),
+     modalSweetAlert: (page: Page) => page.locator('div.sweet-alert.showSweetAlert'),
+     modalTitle: (page: Page) => page.locator('div.sweet-alert.showSweetAlert h2'),
+     modalText: (page: Page) => page.locator('div.sweet-alert.showSweetAlert p.lead.text-muted'),
+
+     // Otros
+     loadingIcon: (page: Page) => page.locator('.progress-center'),
 }

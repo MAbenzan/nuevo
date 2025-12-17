@@ -1,4 +1,4 @@
-import { Page } from '@playwright/test';
+import { Page, expect } from '@playwright/test';
 import { CustomActions } from 'actions/customActions';
 import { menuSelectors } from 'selectors/menu.selectors';
 import { obtenerClienteYContenedorUnificado, Restricciones, Accion_restriccion } from 'data/queries';
@@ -13,7 +13,7 @@ export class AutorizacionSalidaPage {
     cliente?: string,
     dbParams?: { usuario?: string; rol?: string; garantia?: string | number | boolean; tributacion?: number; modulo?: string; estadoOperativo?: string; restricciones?: Restricciones; accion_restriccion?: Accion_restriccion },
     options?: { fecha?: string | null; nota?: string },
-  ): Promise<{ blocked: boolean; title?: string; message?: string }> {
+  ): Promise<{ blocked: boolean; title?: string; message?: string; solicitud?: string }> {
     if (!cliente) {
       const datos = await obtenerClienteYContenedorUnificado({
         usuario: dbParams?.usuario,
@@ -63,16 +63,30 @@ export class AutorizacionSalidaPage {
     }
 
     await this.actions.delay(1000);
-    await this.actions.click(autorizacionSalidaSelectors.chkSeleccionarPrimero(this.page), 'click-chk-seleccionar-priemro');
+    // Aumentamos el timeout para dar tiempo a que la búsqueda termine y aparezca el resultado
+    await this.actions.click(autorizacionSalidaSelectors.chkSeleccionarPrimero(this.page), 'click-chk-seleccionar-priemro', { timeout: 15000 });
 
     await this.actions.click(commonSelectors.btnProximo(this.page), 'click-btn-proximo');
+
+    // Detectar modal de garantia exedida (SweetAlert)
+    const modalGarantia = await this.actions.handleModal({ title: 'Garantia excedida!', messageIncludes: 'Desea solicitar aumento temporal de Garantia?' }, undefined, false, 5000, false);
+    if (modalGarantia?.detected) {
+      await this.actions.click(commonSelectors.btnNo(this.page), 'click-btn-no');
+      return { blocked: true, title: modalGarantia.title, message: modalGarantia.message };
+    }
 
     await this.actions.click(commonSelectors.btnFinalizar(this.page), 'click-btn-finalizar');
 
     await this.actions.click(commonSelectors.btnSi(this.page), 'click-btn-si');
 
+    // Capturar solicitud: Esperamos a que aparezca "Solicitud No." en el modal y capturamos el número
+    await this.actions.delay(2000); 
+    const modalTitle = commonSelectors.modalTitle(this.page);
+    await expect(modalTitle).toContainText('Solicitud No.', { timeout: 15000 });
+    const solicitud = (await modalTitle.innerText()).match(/Solicitud No\.\s+([\d-]+)/i)?.[1];
+    
     await this.actions.click(commonSelectors.btnCerrar(this.page), 'click-btn-cerrar');
 
-    return { blocked: false };
+    return { blocked: false, solicitud };
   }
 }

@@ -21,6 +21,11 @@ export class CustomActions {
       await this.page.locator('.sweet-overlay').waitFor({ state: 'hidden', timeout: timeout ?? this.defaultTimeout });
     } catch {}
     try {
+      // Esperar a que el icono de carga desaparezca (si existe)
+      // waitFor({ state: 'hidden' }) retorna inmediatamente si el elemento no existe o ya está oculto
+      await commonSelectors.loadingIcon(this.page).waitFor({ state: 'hidden', timeout: timeout ?? this.defaultTimeout });
+    } catch {}
+    try {
       await locator.waitFor({ state: 'visible', timeout: timeout ?? this.defaultTimeout });
     } catch (e) {
       throw new Error('Elemento no visible antes de la acción');
